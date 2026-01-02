@@ -157,6 +157,55 @@ def calculate_prediction(df_override: pd.DataFrame = None, config_override: Dict
     finally:
         db.close()
 
+def get_comprehensive_stats(df_override: pd.DataFrame = None):
+    db = SessionLocal()
+    try:
+        if df_override is not None:
+             df = df_override
+        else:
+            df = get_all_draws_as_dataframe(db)
+        
+        if df.empty:
+            return {}
+
+        # 1. Number Frequencies
+        # Top 5 Hot (Last 50 draws)
+        last_50 = df.tail(50)
+        number_counts_50 = {}
+        for _, row in last_50.iterrows():
+            for ball in row['balls']:
+                number_counts_50[ball] = number_counts_50.get(ball, 0) + 1
+        
+        hot_numbers = sorted(number_counts_50.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        # Bottom 5 Cold (Last 50 draws) - considers ALL numbers 1-25
+        all_numbers = set(range(1, 26))
+        # Fill missing with 0
+        for n in all_numbers:
+            if n not in number_counts_50:
+                number_counts_50[n] = 0
+                
+        cold_numbers = sorted(number_counts_50.items(), key=lambda x: x[1])[:5]
+
+        # 2. Gaps (Overdue)
+        # We can reuse calculate_stats or do it quickly here
+        stats = calculate_stats(df)
+        overdue_numbers = sorted(stats.items(), key=lambda x: x[1]["gap"], reverse=True)[:5]
+        
+        # 3. Letter Stats
+        letter_stats = calculate_letter_stats(df)
+        sorted_letters = sorted(letter_stats.items(), key=lambda x: x[1]["count"], reverse=True) # Sort by freq
+
+        return {
+            "hot_numbers": [{"number": n, "count": c} for n, c in hot_numbers],
+            "cold_numbers": [{"number": n, "count": c} for n, c in cold_numbers],
+            "overdue_numbers": [{"number": n, "gap": data["gap"]} for n, data in overdue_numbers],
+            "letter_stats": [{"letter": l, "count": data["count"], "gap": data["gap"]} for l, data in sorted_letters],
+            "total_draws": len(df)
+        }
+    finally:
+        db.close()
+
 if __name__ == "__main__":
     # Test run
     pred = calculate_prediction()

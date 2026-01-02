@@ -111,6 +111,18 @@ def get_prediction():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/stats")
+def get_stats():
+    """
+    Returns comprehensive statistics for the dashboard.
+    """
+    try:
+        from engine import get_comprehensive_stats
+        stats = get_comprehensive_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/history", response_model=List[DrawResponse])
 def get_history(limit: int = 50, db: Session = Depends(get_db)):
     """
