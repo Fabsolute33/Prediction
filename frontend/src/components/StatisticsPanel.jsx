@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Trophy, TrendingDown, Hourglass, Hash, PieChart } from 'lucide-react';
+import { Trophy, TrendingDown, Hourglass, Hash, PieChart, Info } from 'lucide-react';
 
 const StatisticsPanel = () => {
     const [stats, setStats] = useState(null);
@@ -32,11 +32,23 @@ const StatisticsPanel = () => {
     if (loading) return <div className="text-white text-center p-8">Loading Statistics...</div>;
     if (!stats) return <div className="text-white text-center p-8">Statistics Unavailable</div>;
 
-    const StatCard = ({ title, icon: Icon, children, className = "" }) => (
+    const StatCard = ({ title, icon: Icon, children, className = "", tooltip }) => (
         <div className={`bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 md:p-6 ${className}`}>
-            <div className="flex items-center gap-2 mb-4 text-gray-400 font-medium uppercase text-xs tracking-wider">
-                <Icon className="w-4 h-4" />
-                {title}
+            <div className="flex items-center justify-between mb-4 text-gray-400 font-medium uppercase text-xs tracking-wider">
+                <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    {title}
+                </div>
+                {tooltip && (
+                    <div className="relative group">
+                        <Info className="w-4 h-4 cursor-help text-gray-500 hover:text-gray-300 transition-colors" />
+                        <div className="absolute right-0 bottom-full mb-2 w-48 md:w-64 p-3 bg-gray-900/95 backdrop-blur border border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                            <p className="text-gray-300 text-xs normal-case tracking-normal leading-relaxed text-left">
+                                {tooltip}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
             {children}
         </div>
@@ -63,7 +75,12 @@ const StatisticsPanel = () => {
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 {/* Hot Numbers */}
-                <StatCard title="Fréquences Élevées (50)" icon={Trophy} className="border-l-4 border-l-purple-500">
+                <StatCard
+                    title="Fréquences Élevées (50)"
+                    icon={Trophy}
+                    className="border-l-4 border-l-purple-500"
+                    tooltip="Les numéros les plus souvent tirés lors des 50 derniers tirages. Indique une tendance 'chaude'."
+                >
                     <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.hot_numbers.map((item, idx) => (
                             <NumberBall
@@ -78,7 +95,12 @@ const StatisticsPanel = () => {
                 </StatCard>
 
                 {/* Cold Numbers */}
-                <StatCard title="Fréquences Faibles (50)" icon={TrendingDown} className="border-l-4 border-l-red-500">
+                <StatCard
+                    title="Fréquences Faibles (50)"
+                    icon={TrendingDown}
+                    className="border-l-4 border-l-red-500"
+                    tooltip="Les numéros les moins souvent tirés lors des 50 derniers tirages. Ces numéros sont en 'retrait' statistique."
+                >
                     <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.cold_numbers.map((item, idx) => (
                             <NumberBall
@@ -93,7 +115,12 @@ const StatisticsPanel = () => {
                 </StatCard>
 
                 {/* Overdue Numbers */}
-                <StatCard title="Plus Gros Écarts" icon={Hourglass} className="border-l-4 border-l-emerald-500">
+                <StatCard
+                    title="Plus Gros Écarts"
+                    icon={Hourglass}
+                    className="border-l-4 border-l-emerald-500"
+                    tooltip="Les numéros qui ne sont pas sortis depuis le plus grand nombre de tirages consécutifs."
+                >
                     <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.overdue_numbers.map((item, idx) => (
                             <NumberBall
