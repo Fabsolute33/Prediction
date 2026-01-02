@@ -83,29 +83,7 @@ def calculate_letter_stats(df: pd.DataFrame, letters=['A', 'B', 'C', 'D', 'E']):
     return stats
 
 
-        # 2. Formula: Score = (freq_weight * Freq_20) + (gap_weight * (1 - exp(-decay * Gap)))
-        
-        # Load config if not provided
-        # For now, default to current values for backward compatibility if not passed
-        # In a real scenario, this would load from DB, but let's allow overrides first
-        
-        cfg_freq = 0.4
-        cfg_gap = 0.5
-        cfg_decay = 0.15
-        
-        # Check if we have an active config in DB (Step 2: integrate DB config later/now)
-        # For this step, I'll just prepare the code to use variables.
-        # But wait, I'm inside calculate_prediction. 
-        # let's add `config` argument to calculate_prediction signature in a separate edit or assume defaults.
-        
-        # ACTUALLY, let's make a calculate_score function.
-        
-        scores = []
-        for n, s in numbers_stats.items():
-            scores.append(calculate_score_for_number(n, s))
-            
-        # ...
-        
+
 def calculate_score_for_number(number, stats, freq_w=0.4, gap_w=0.5, decay=0.15):
     freq_term = freq_w * stats["freq_20"]
     gap_term = gap_w * (1 - math.exp(-decay * stats["gap"]))

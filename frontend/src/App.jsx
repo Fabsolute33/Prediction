@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PredictionBoard from './components/PredictionBoard';
 import HistoryTable from './components/HistoryTable';
 import { Activity } from 'lucide-react';
+import ExpertAgentPanel from './components/ExpertAgentPanel';
 
 const getApiUrl = () => {
   const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -58,12 +59,19 @@ function App() {
       </header>
 
       <main className="flex flex-col gap-12">
+
+
         {/* Section 1: The Future */}
         <section>
           <PredictionBoard prediction={prediction} onRefresh={fetchData} />
         </section>
 
-        {/* Section 2: The Past */}
+        {/* Section 2: The Expert Agent */}
+        <section>
+          <ExpertAgentPanel />
+        </section>
+
+        {/* Section 3: The Past */}
         <section>
           <HistoryTable draws={history} />
         </section>

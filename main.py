@@ -201,5 +201,52 @@ def refresh_data(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Refresh failed: {str(e)}")
 
 
+# --- Expert Agent Models ---
+class AgentAnalysisResponse(BaseModel):
+    current_params: dict
+    accuracy_last_50: float
+    message: str
+
+class EvolutionResponse(BaseModel):
+    found_better: bool
+    current_accuracy: Optional[float] = None
+    best_accuracy: Optional[float] = None
+    improvement: Optional[str] = None
+    proposed_params: Optional[dict] = None
+    message: str
+
+class ConfigRequest(BaseModel):
+    freq_weight: float
+    gap_weight: float
+    decay_rate: float
+
+@app.get("/expert/analysis", response_model=AgentAnalysisResponse)
+def get_expert_analysis():
+    """
+    Get the Expert Agent's analysis of the current configuration.
+    """
+    from expert_agent import ExpertMathAgent
+    agent = ExpertMathAgent()
+    return agent.analyze_current_performance()
+
+@app.post("/expert/optimize", response_model=EvolutionResponse)
+def run_optimization():
+    """
+    Ask the Expert Agent to study successive draws and propose an evolution of the formula.
+    """
+    from expert_agent import ExpertMathAgent
+    agent = ExpertMathAgent()
+    return agent.evolve_formula()
+
+@app.post("/expert/apply")
+def apply_config(config: ConfigRequest):
+    """
+    Apply a new configuration proposed by the Agent.
+    """
+    from expert_agent import ExpertMathAgent
+    agent = ExpertMathAgent()
+    result = agent.apply_new_parameters(config.dict())
+    return result
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
