@@ -3,7 +3,7 @@ import PredictionBoard from './components/PredictionBoard';
 import HistoryTable from './components/HistoryTable';
 import { Activity } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
   const [prediction, setPrediction] = useState(null);
