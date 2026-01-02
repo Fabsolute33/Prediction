@@ -120,7 +120,7 @@ def calculate_prediction(df_override: pd.DataFrame = None, config_override: Dict
             df = get_all_draws_as_dataframe(db)
         
         if df.empty:
-            return {"numbers": [], "letter": "A", "confidence": 0}
+            return {"numbers": [], "confidence": 0}
 
         # 1. Number Stats
         numbers_stats = calculate_stats(df)
@@ -139,17 +139,13 @@ def calculate_prediction(df_override: pd.DataFrame = None, config_override: Dict
         top_numbers = [x["number"] for x in top_10]
         avg_score = sum([x["score"] for x in top_10]) / 10
         
-        # 3. Letter Stats (Simple: Most overdue/Gap weighted)
-        letter_stats = calculate_letter_stats(df)
-        # Score letter by Gap mostly? Or just pick most frequent? 
-        # Let's use a similar gap logic: Higher gap = Higher probability often in gambler's fallacy logic 
-        # but let's stick to a mix. Let's pick the one with highest Gap for variety or highest freq?
-        # User didn't specify letter formula. I'll use Highest Gap.
-        best_letter = max(letter_stats.items(), key=lambda x: x[1]["gap"])[0]
+        # 3. Letter Stats - REMOVED as per user request (User cannot choose letter)
+        # letter_stats = calculate_letter_stats(df)
+        # best_letter = max(letter_stats.items(), key=lambda x: x[1]["gap"])[0]
 
         return {
             "numbers": top_numbers,
-            "letter": best_letter,
+            # "letter": best_letter, # Removed
             "confidence": min(avg_score * 10, 100), # Normalize roughly
             "details": top_10
         }
@@ -192,15 +188,15 @@ def get_comprehensive_stats(df_override: pd.DataFrame = None):
         stats = calculate_stats(df)
         overdue_numbers = sorted(stats.items(), key=lambda x: x[1]["gap"], reverse=True)[:5]
         
-        # 3. Letter Stats
-        letter_stats = calculate_letter_stats(df)
-        sorted_letters = sorted(letter_stats.items(), key=lambda x: x[1]["count"], reverse=True) # Sort by freq
+        # 3. Letter Stats - REMOVED
+        # letter_stats = calculate_letter_stats(df)
+        # sorted_letters = sorted(letter_stats.items(), key=lambda x: x[1]["count"], reverse=True) # Sort by freq
 
         return {
             "hot_numbers": [{"number": n, "count": c} for n, c in hot_numbers],
             "cold_numbers": [{"number": n, "count": c} for n, c in cold_numbers],
             "overdue_numbers": [{"number": n, "gap": data["gap"]} for n, data in overdue_numbers],
-            "letter_stats": [{"letter": l, "count": data["count"], "gap": data["gap"]} for l, data in sorted_letters],
+            # "letter_stats": [{"letter": l, "count": data["count"], "gap": data["gap"]} for l, data in sorted_letters],
             "total_draws": len(df)
         }
     finally:

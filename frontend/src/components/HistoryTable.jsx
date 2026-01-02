@@ -33,9 +33,6 @@ const HistoryTable = ({ draws }) => {
                     <tbody className="text-sm">
                         {draws.map((draw, idx) => {
                             const predNumbers = draw.prediction?.numbers || [];
-                            const predLetter = draw.prediction?.letter || "";
-                            const isLetterMatch = draw.bonus_letter === predLetter;
-
                             return (
                                 <tr
                                     key={draw.id}
@@ -57,7 +54,7 @@ const HistoryTable = ({ draws }) => {
                                             })}
                                         </div>
                                     </td>
-                                    <td className={`p-4 text-center font-bold ${isLetterMatch ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'text-yellow-500'}`}>
+                                    <td className="p-4 text-center font-bold text-yellow-500">
                                         {draw.bonus_letter}
                                     </td>
                                     <td className="p-4 text-right">

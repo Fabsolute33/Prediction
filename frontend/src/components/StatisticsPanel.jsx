@@ -108,28 +108,7 @@ const StatisticsPanel = () => {
                 </StatCard>
             </div>
 
-            {/* Letters Stats */}
-            <StatCard title="Statistiques Lettres (Chance)" icon={PieChart}>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats.letter_stats}>
-                            <XAxis dataKey="letter" stroke="#9ca3af" />
-                            <YAxis stroke="#9ca3af" />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '0.5rem' }}
-                                itemStyle={{ color: '#fff' }}
-                            />
-                            <Bar dataKey="count" name="Sorties" fill="#8884d8" radius={[4, 4, 0, 0]}>
-                                {stats.letter_stats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={`hsl(250, 70%, ${50 + index * 5}%)`} />
-                                ))}
-                            </Bar>
-                            <Bar dataKey="gap" name="Écart Actuel" fill="#34d399" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <p className="text-center text-xs text-gray-500 mt-2">Comparaison fréquence vs écart actuel pour chaque lettre</p>
-            </StatCard>
+            {/* Letter Stats Removed as per user request */}
 
             <div className="text-right text-xs text-gray-600">
                 Basé sur une analyse de {stats.total_draws} tirages historiques.

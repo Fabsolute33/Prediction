@@ -35,7 +35,7 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
         </div>
     );
 
-    const { numbers, letter, confidence } = prediction;
+    const { numbers, confidence } = prediction;
 
     return (
         <div className="glass-card p-6 md:p-8 w-full max-w-4xl mx-auto mb-8 relative overflow-hidden group">
@@ -91,17 +91,7 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
                 ))}
             </div>
 
-            <div className="border-t border-white/10 pt-4 flex flex-col items-center">
-                <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest">Bonus Letter</p>
-                <motion.div
-                    initial={{ rotate: -180, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    transition={{ delay: 1.2, type: "spring" }}
-                    className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-3xl font-black text-black shadow-xl shadow-orange-500/20"
-                >
-                    {letter}
-                </motion.div>
-            </div>
+            {/* Bonus Letter Removed */}
         </div>
     );
 };
