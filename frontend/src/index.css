@@ -23,7 +23,7 @@
 
   /* Horizontal Scroll for Mobile Stats */
   .mobile-scroll-x {
-    @apply overflow-x-auto flex-nowrap scrollbar-hide;
+    @apply overflow-x-auto flex-nowrap;
     -ms-overflow-style: none;
     /* IE and Edge */
     scrollbar-width: none;

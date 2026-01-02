@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PredictionBoard from './components/PredictionBoard';
 import HistoryTable from './components/HistoryTable';
-import { Activity, BarChart3, Brain, History, Stars } from 'lucide-react';
+import { Activity, BarChart3, Brain, History, Stars, Menu, X } from 'lucide-react';
 import ExpertAgentPanel from './components/ExpertAgentPanel';
 import StatisticsPanel from './components/StatisticsPanel';
 
@@ -16,6 +16,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [status, setStatus] = useState("Connecting...");
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -56,39 +57,49 @@ function App() {
           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
           : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
     >
-      <Icon className="w-5 h-5 md:w-4 md:h-4" />
-      <span className="hidden md:inline">{label}</span>
-      {/* Mobile Label only for active? Or maybe just icon on mobile if space is tight? 
-          Let's keep text hidden on very small screens if needed, but for now Bottom Nav usually has icons.
-      */}
+      <Icon className="w-4 h-4" />
+      {label}
     </button>
   );
 
-  const MobileNavButton = ({ id, icon: Icon, label }) => (
+  const MobileMenuItem = ({ id, icon: Icon, label }) => (
     <button
-      onClick={() => setActiveTab(id)}
-      className={`flex flex-col items-center justify-center w-full py-2 transition-all duration-300
-            ${activeTab === id ? 'text-blue-400' : 'text-gray-500 hover:text-gray-300'}
+      onClick={() => {
+        setActiveTab(id);
+        setIsMenuOpen(false);
+      }}
+      className={`flex items-center gap-4 w-full p-4 rounded-xl transition-all duration-300
+            ${activeTab === id ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-gray-400 hover:bg-white/5'}
         `}
     >
-      <Icon className={`w-6 h-6 mb-1 ${activeTab === id ? 'drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]' : ''}`} />
-      <span className="text-[10px] font-medium uppercase tracking-wider">{label}</span>
+      <Icon className="w-6 h-6" />
+      <span className="text-lg font-medium">{label}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white relative flex flex-col">
-      {/* Background is handled in global CSS, but structure needs specific padding for mobile bottom bar */}
+    <div className="min-h-screen bg-slate-900 text-white relative flex flex-col font-sans">
 
-      <div className="p-4 md:p-8 pb-24 md:pb-8 flex-grow"> {/* Added bottom padding for mobile nav */}
+      <div className="p-4 md:p-8 flex-grow">
         <header className="max-w-4xl mx-auto mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 text-center md:text-left">
+          <div className="flex justify-between items-center gap-4 mb-8">
+            <h1 className="text-2xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
               CRESCENDO<span className="text-white font-light">PROPHET</span>
             </h1>
-            <div className="flex items-center gap-2 text-xs font-mono bg-white/5 py-1 px-3 rounded-full border border-white/10">
-              <Activity className={`w-3 h-3 ${status.includes('Live') ? 'text-emerald-500 animate-pulse' : 'text-red-500'}`} />
-              {status}
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 text-xs font-mono bg-white/5 py-1 px-3 rounded-full border border-white/10">
+                <Activity className={`w-3 h-3 ${status.includes('Live') ? 'text-emerald-500 animate-pulse' : 'text-red-500'}`} />
+                {status}
+              </div>
+
+              {/* Hamburger Button */}
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="md:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-lg border border-white/10"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
             </div>
           </div>
 
@@ -97,7 +108,6 @@ function App() {
             <NavButton id="dashboard" icon={Stars} label="Prédiction" />
             <NavButton id="stats" icon={BarChart3} label="Statistiques" />
             <NavButton id="expert" icon={Brain} label="Expert IA" />
-            <NavButton id="history" icon={History} label="Historique" />
           </div>
         </header>
 
@@ -130,12 +140,6 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'history' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <HistoryTable draws={history} />
-            </div>
-          )}
-
         </main>
 
         <footer className="max-w-4xl mx-auto mt-12 text-center text-gray-500 text-xs pb-4">
@@ -143,15 +147,33 @@ function App() {
         </footer>
       </div>
 
-      {/* Mobile Fixed Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-slate-900/90 backdrop-blur-xl border-t border-white/10 z-50 pb-safe">
-        <div className="flex justify-between items-center px-6 py-2 max-w-sm mx-auto">
-          <MobileNavButton id="dashboard" icon={Stars} label="Oracle" />
-          <MobileNavButton id="stats" icon={BarChart3} label="Stats" />
-          <MobileNavButton id="expert" icon={Brain} label="Expert" />
-          <MobileNavButton id="history" icon={History} label="Hist." />
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl p-6 flex flex-col animate-in fade-in duration-200">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-white">Menu</h2>
+            <button
+              onClick={() => setIsMenuOpen(false)}
+              className="p-2 text-gray-400 hover:text-white bg-white/5 rounded-full"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <MobileMenuItem id="dashboard" icon={Stars} label="Prédiction" />
+            <MobileMenuItem id="stats" icon={BarChart3} label="Statistiques" />
+            <MobileMenuItem id="expert" icon={Brain} label="Expert IA" />
+          </div>
+
+          <div className="mt-auto pt-8 border-t border-white/10">
+            <div className="flex items-center gap-2 text-sm font-mono text-gray-400 justify-center">
+              <Activity className={`w-4 h-4 ${status.includes('Live') ? 'text-emerald-500' : 'text-red-500'}`} />
+              {status}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
