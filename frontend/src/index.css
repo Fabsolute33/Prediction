@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-900 text-white min-h-screen overflow-x-hidden;
+    /* Vivid Gradient Background */
+    background: radial-gradient(circle at top left, #4f46e5 0%, transparent 40%),
+      radial-gradient(circle at bottom right, #db2777 0%, transparent 40%),
+      #0f172a;
+  }
+}
+
+@layer components {
+
+  /* Glassmorphism Card Utility */
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl rounded-2xl;
+  }
+
+  .glass-panel {
+    @apply bg-black/20 backdrop-blur-md border border-white/10 rounded-xl;
+  }
+}
