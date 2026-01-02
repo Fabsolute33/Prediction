@@ -11,12 +11,12 @@ services:
         value: 3.11.0
 
   # Frontend Service
-  - type: static
+  - type: web
     name: crescendo-web
     plan: free
-    env: node
+    env: static
     buildCommand: cd frontend && npm install && npm run build
-    publishDir: frontend/dist
+    staticPublishPath: frontend/dist
     routes:
       - type: rewrite
         source: /*
