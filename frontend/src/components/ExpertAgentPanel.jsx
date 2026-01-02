@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE = 'http://localhost:8000';
+const getApiUrl = () => {
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    return url.startsWith('http') ? url : `https://${url}`;
+};
+const API_BASE = getApiUrl();
 
 const ExpertAgentPanel = () => {
     const [analysis, setAnalysis] = useState(null);
@@ -108,8 +112,8 @@ const ExpertAgentPanel = () => {
                                 onClick={handleOptimize}
                                 disabled={optimizing}
                                 className={`px-6 py-3 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105 ${optimizing
-                                        ? 'bg-gray-600 cursor-wait'
-                                        : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white'
+                                    ? 'bg-gray-600 cursor-wait'
+                                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white'
                                     }`}
                             >
                                 {optimizing ? (
