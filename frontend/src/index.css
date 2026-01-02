@@ -20,4 +20,17 @@
   .glass-panel {
     @apply bg-black/20 backdrop-blur-md border border-white/10 rounded-xl;
   }
+
+  /* Horizontal Scroll for Mobile Stats */
+  .mobile-scroll-x {
+    @apply overflow-x-auto flex-nowrap scrollbar-hide;
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .mobile-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
 }

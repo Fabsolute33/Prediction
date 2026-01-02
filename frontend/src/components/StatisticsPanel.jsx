@@ -33,7 +33,7 @@ const StatisticsPanel = () => {
     if (!stats) return <div className="text-white text-center p-8">Statistics Unavailable</div>;
 
     const StatCard = ({ title, icon: Icon, children, className = "" }) => (
-        <div className={`bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 ${className}`}>
+        <div className={`bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 md:p-6 ${className}`}>
             <div className="flex items-center gap-2 mb-4 text-gray-400 font-medium uppercase text-xs tracking-wider">
                 <Icon className="w-4 h-4" />
                 {title}
@@ -44,7 +44,7 @@ const StatisticsPanel = () => {
 
     const NumberBall = ({ number, value, label, color = "blue" }) => (
         <div className="flex flex-col items-center gap-2">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-lg
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-base md:text-lg font-bold shadow-lg
                 ${color === 'purple' ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white' : ''}
                 ${color === 'red' ? 'bg-gradient-to-br from-red-500 to-orange-600 text-white' : ''}
                 ${color === 'emerald' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white' : ''}
@@ -53,18 +53,18 @@ const StatisticsPanel = () => {
                 {number}
             </div>
             <div className="text-center">
-                <div className="text-lg font-bold text-white">{value}</div>
-                <div className="text-xs text-gray-400">{label}</div>
+                <div className="text-base md:text-lg font-bold text-white">{value}</div>
+                <div className="text-[10px] md:text-xs text-gray-400">{label}</div>
             </div>
         </div>
     );
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 {/* Hot Numbers */}
                 <StatCard title="Fréquences Élevées (50)" icon={Trophy} className="border-l-4 border-l-purple-500">
-                    <div className="flex justify-between items-center px-2">
+                    <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.hot_numbers.map((item, idx) => (
                             <NumberBall
                                 key={idx}
@@ -79,7 +79,7 @@ const StatisticsPanel = () => {
 
                 {/* Cold Numbers */}
                 <StatCard title="Fréquences Faibles (50)" icon={TrendingDown} className="border-l-4 border-l-red-500">
-                    <div className="flex justify-between items-center px-2">
+                    <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.cold_numbers.map((item, idx) => (
                             <NumberBall
                                 key={idx}
@@ -94,7 +94,7 @@ const StatisticsPanel = () => {
 
                 {/* Overdue Numbers */}
                 <StatCard title="Plus Gros Écarts" icon={Hourglass} className="border-l-4 border-l-emerald-500">
-                    <div className="flex justify-between items-center px-2">
+                    <div className="flex justify-between items-center px-2 mobile-scroll-x md:overflow-visible">
                         {stats.overdue_numbers.map((item, idx) => (
                             <NumberBall
                                 key={idx}

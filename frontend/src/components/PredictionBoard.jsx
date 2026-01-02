@@ -42,20 +42,20 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
             {/* Glow Effect */}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6 z-10 relative">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 z-10 relative gap-4 md:gap-0">
                 <div className="flex items-center gap-2">
                     <Zap className="text-yellow-400 w-6 h-6" />
-                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
                         The Oracle
                     </h2>
                 </div>
-                <div className="mt-4 md:mt-0 w-full md:w-64 flex flex-col items-end gap-2">
+                <div className="w-full md:w-64 flex flex-col items-center md:items-end gap-3 md:gap-2">
                     <StatusGauge confidence={confidence} />
 
                     <button
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <span className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />

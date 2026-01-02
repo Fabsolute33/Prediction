@@ -50,8 +50,7 @@ class ExpertMathAgent:
             actual_numbers = set(actual_draw['balls'])
             
             # Count common numbers (simple hit rate)
-            # Optimization Focus: NUMBERS ONLY. 
-            # The letter is assigned post-validation and cannot be chosen, so we ignore it completely.
+            # Or use full gain logic? Let's stick to "numbers found" for optimization
             common = predicted_numbers.intersection(actual_numbers)
             hits += len(common)
             total_predictions += 5 # We predict 5 numbers

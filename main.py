@@ -44,17 +44,18 @@ def get_db():
         db.close()
 
 # --- Helpers ---
-def calculate_gain(draw_balls: List[int], pred_balls: List[int]) -> float:
+def calculate_gain(draw_balls: List[int], draw_letter: str, pred_balls: List[int], pred_letter: str) -> float:
     if not pred_balls:
         return 0.0
         
     # Count matches
     matches = len(set(draw_balls) & set(pred_balls))
+    letter_match = (draw_letter == pred_letter)
     
     gain = 0.0
     
     if matches == 10:
-        # Jackpot
+        # Jackpot - technically shared, but let's put min value or just a huge number
         gain = 100000.0 
     elif matches == 9:
         gain = 500.0
@@ -64,8 +65,13 @@ def calculate_gain(draw_balls: List[int], pred_balls: List[int]) -> float:
         gain = 7.0
     elif matches == 6:
         gain = 1.0
+    elif matches <= 5 and letter_match:
+        gain = 1.0 # Refund
     else:
         gain = 0.0
+        
+    if letter_match and matches >= 6 and matches < 10:
+        gain *= 2
         
     return gain
 
@@ -131,7 +137,7 @@ def get_history(limit: int = 50, db: Session = Depends(get_db)):
         pred_letter = pred.get("letter", "")
         
         matches_count = len(set(d.balls_list) & set(pred_numbers)) if pred_numbers else 0
-        gain = calculate_gain(d.balls_list, pred_numbers)
+        gain = calculate_gain(d.balls_list, d.bonus_letter, pred_numbers, pred_letter)
         
         # We start constructing the response dict manually or assume Pydantic handles the property mapping 
         # but since 'gain' and 'prediction' are not columns on the model (prediction_json is), 
