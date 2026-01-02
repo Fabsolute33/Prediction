@@ -16,6 +16,25 @@ class Draw(Base):
     prediction_json = Column(JSON, nullable=True) # Stored as {numbers: [], letter: X}
     source = Column(String) # 'csv' or 'scrape'
 
+class AlgorithmConfiguration(Base):
+    __tablename__ = 'algo_config'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    active = Column(Integer, default=1) # 1 if this is the currently used config
+    
+    # Formula Parameters
+    freq_weight = Column(String) # Stored as float but String for precision if needed? No, Float is fine. Let's use Float or just generic JSON to be flexible? 
+    # Let's be explicit for now as the formula is specific.
+    # Actually, to allow "evolution of the formula" (structure), JSON might be better. 
+    # But for now, let's stick to tuning the weights of the *existing* formula as step 1.
+    freq_weight = Column(String, default="0.4") 
+    gap_weight = Column(String, default="0.5")
+    decay_rate = Column(String, default="0.15") 
+    window_size = Column(Integer, default=20)
+    
+    updated_at = Column(Date)
+    notes = Column(String) # "Proposed by Expert Agent"
+
 # Database URL
 DATABASE_URL = "sqlite:///./crescendo.db"
 

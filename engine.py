@@ -83,9 +83,59 @@ def calculate_letter_stats(df: pd.DataFrame, letters=['A', 'B', 'C', 'D', 'E']):
     return stats
 
 
-def calculate_prediction(df_override: pd.DataFrame = None) -> Dict[str, Any]:
+        # 2. Formula: Score = (freq_weight * Freq_20) + (gap_weight * (1 - exp(-decay * Gap)))
+        
+        # Load config if not provided
+        # For now, default to current values for backward compatibility if not passed
+        # In a real scenario, this would load from DB, but let's allow overrides first
+        
+        cfg_freq = 0.4
+        cfg_gap = 0.5
+        cfg_decay = 0.15
+        
+        # Check if we have an active config in DB (Step 2: integrate DB config later/now)
+        # For this step, I'll just prepare the code to use variables.
+        # But wait, I'm inside calculate_prediction. 
+        # let's add `config` argument to calculate_prediction signature in a separate edit or assume defaults.
+        
+        # ACTUALLY, let's make a calculate_score function.
+        
+        scores = []
+        for n, s in numbers_stats.items():
+            scores.append(calculate_score_for_number(n, s))
+            
+        # ...
+        
+def calculate_score_for_number(number, stats, freq_w=0.4, gap_w=0.5, decay=0.15):
+    freq_term = freq_w * stats["freq_20"]
+    gap_term = gap_w * (1 - math.exp(-decay * stats["gap"]))
+    total_score = freq_term + gap_term
+    return {"number": number, "score": total_score, "gap": stats["gap"], "freq": stats["freq_20"]}
+
+def calculate_prediction(df_override: pd.DataFrame = None, config_override: Dict[str, float] = None) -> Dict[str, Any]:
     db = SessionLocal()
     try:
+        # Load Config from DB or use defaults
+        # We can implement DB loading here or pass it in. 
+        # For now, let's define defaults and override if config_override is present.
+        
+        freq_w = 0.4
+        gap_w = 0.5
+        decay = 0.15
+        
+        if config_override:
+            freq_w = config_override.get('freq_weight', freq_w)
+            gap_w = config_override.get('gap_weight', gap_w)
+            decay = config_override.get('decay_rate', decay)
+        else:
+            # Try to load from DB
+            from models import AlgorithmConfiguration
+            algo_config = db.query(AlgorithmConfiguration).filter_by(active=1).first()
+            if algo_config:
+                 freq_w = float(algo_config.freq_weight)
+                 gap_w = float(algo_config.gap_weight)
+                 decay = float(algo_config.decay_rate)
+        
         if df_override is not None:
              df = df_override
         else:
@@ -97,13 +147,11 @@ def calculate_prediction(df_override: pd.DataFrame = None) -> Dict[str, Any]:
         # 1. Number Stats
         numbers_stats = calculate_stats(df)
         
-        # 2. Formula: Score = (0.4 * Freq_20) + (0.5 * (1 - exp(-0.15 * Gap)))
+        # 2. Calculate Scores
         scores = []
         for n, s in numbers_stats.items():
-            freq_term = 0.4 * s["freq_20"]
-            gap_term = 0.5 * (1 - math.exp(-0.15 * s["gap"]))
-            total_score = freq_term + gap_term
-            scores.append({"number": n, "score": total_score, "gap": s["gap"], "freq": s["freq_20"]})
+             score_data = calculate_score_for_number(n, s, freq_w, gap_w, decay)
+             scores.append(score_data)
             
         # Sort by score descending
         scores.sort(key=lambda x: x["score"], reverse=True)

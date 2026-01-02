@@ -11,7 +11,8 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
         setLoading(true);
         setMessage(null);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const API_URL = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
             const res = await fetch(`${API_URL}/refresh`, { method: 'POST' });
             const data = await res.json();
             setMessage(data.message);
