@@ -13,7 +13,6 @@ services:
   # Frontend Service
   - type: web
     name: crescendo-web
-    plan: free
     env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
