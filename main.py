@@ -108,7 +108,7 @@ app = FastAPI(title="Crescendo Prophet", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["*"], # Wildcard works if allow_credentials=False
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "https://crescendo-web-ydw2.onrender.com"],
     allow_credentials=True, # Keeping True for now, but ensuring origins are correct.
     allow_methods=["*"],
     allow_headers=["*"],
@@ -184,26 +184,20 @@ def get_prediction(db: Session = Depends(get_db)):
         if existing_draw and existing_draw.prediction_json:
             # We already have a stable prediction for this slot
             pred = existing_draw.prediction_json
-            
-            # Ensure next_draw_time string matches what frontend expects
-            # (Just for display consistency)
-            
-            # We can return it directly.
-            # We might need to ensure 'next_draw_time' key is set if frontend needs it from the root of response
-            # deeper inside the 'prediction' object usually?
-            # The PredictionResponse model has 'next_draw_time' at top level.
-            
-            # The stored prediction might or might not have it. Let's ensure it.
-            # actually we return PredictionResponse which constructs from dict.
-            
-            next_draw_str = f"{next_draw_hour}h00"
-            if next_draw_date > now.date():
-                next_draw_str = f"demain {next_draw_str}"
-                
-            pred['next_draw_time'] = next_draw_str
-            return pred
 
-        # 3. If not found, GENERATE and SAVE
+            # CHECK FOR MISSING ALGORITHMIC DATA (Legacy Fix)
+            if "algorithmic" in pred:
+                # Ensure next_draw_time string matches what frontend expects
+                next_draw_str = f"{next_draw_hour}h00"
+                if next_draw_date > now.date():
+                    next_draw_str = f"demain {next_draw_str}"
+                    
+                pred['next_draw_time'] = next_draw_str
+                return pred
+            # If "algorithmic" is missing, we fall through to regenerate
+            print("Detected stale prediction (missing algorithmic). Regenerating...")
+
+        # 3. If not found or stale, GENERATE and SAVE
         # --- UNIFIED PREDICTION LOGIC ---
         from engine import calculate_prediction as calc_stat
         from matrix_engine import calculate_matrix_prediction as calc_algo
@@ -212,14 +206,6 @@ def get_prediction(db: Session = Depends(get_db)):
         algo_pred = calc_algo()
         
         # Structure the new unified prediction object
-        # Note: Frontend history expects 'prediction' to possibly be the old flat format OR new format.
-        # We will migrate to:
-        # {
-        #    "statistical": { ... },
-        #    "algorithmic": { ... },
-        #    "next_draw_time": "..."
-        # }
-        
         prediction = {
             "statistical": stat_pred,
             "algorithmic": algo_pred
@@ -231,21 +217,26 @@ def get_prediction(db: Session = Depends(get_db)):
             next_draw_str = f"demain {next_draw_str}"
         prediction['next_draw_time'] = next_draw_str
         
-        # Create 'Pending' Draw
-        # ID format: YYYYMMDDHH
-        id_str = f"{next_draw_date.strftime('%Y%m%d')}{next_draw_hour:02d}"
+        if existing_draw:
+            # Update existing stale draw
+            existing_draw.prediction_json = prediction
+            # existing_draw.balls_list = [] # Should be empty already
+        else:
+            # Create 'Pending' Draw
+            # ID format: YYYYMMDDHH
+            id_str = f"{next_draw_date.strftime('%Y%m%d')}{next_draw_hour:02d}"
+            
+            new_draw = Draw(
+                draw_id=int(id_str),
+                date=next_draw_date,
+                time=next_draw_time,
+                balls_list=[], # Empty implies pending
+                bonus_letter="?",
+                prediction_json=prediction,
+                source='ai_pending'
+            )
+            db.add(new_draw)
         
-        new_draw = Draw(
-            draw_id=int(id_str),
-            date=next_draw_date,
-            time=next_draw_time,
-            balls_list=[], # Empty implies pending
-            bonus_letter="?",
-            prediction_json=prediction,
-            source='ai_pending'
-        )
-        
-        db.add(new_draw)
         db.commit()
         
         return prediction
