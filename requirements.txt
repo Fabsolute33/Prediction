@@ -7,3 +7,4 @@ requests
 apscheduler
 python-multipart
 pytz
+numpy

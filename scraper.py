@@ -169,8 +169,14 @@ def fetch_and_store_latest() -> bool:
                          # Note: `calculate_prediction` uses the current DB state.
                          # Since we haven't inserted this draw yet, the DB contains draws 0..N-1.
                          # This is exactly what we want: prediction for draw N based on 0..N-1.
-                         from engine import calculate_prediction
-                         prediction = calculate_prediction() # No arguments = uses full DB history
+                         from engine import calculate_prediction as calc_stat
+                         from matrix_engine import calculate_matrix_prediction as calc_algo
+                         
+                         # Unified prediction
+                         prediction = {
+                             "statistical": calc_stat(),
+                             "algorithmic": calc_algo()
+                         }
 
                          # Generate ID: YYYYMMDDHH
                          # e.g. 2025122713
@@ -206,6 +212,11 @@ def fetch_and_store_latest() -> bool:
 
         if latest_added:
             db.commit()
+            # --- Trigger Matrix Engine Update ---
+            from matrix_engine import build_matrices
+            print("Triggering Matrix Engine Recalculation...")
+            build_matrices()
+            
         db.close()
         
         return latest_added

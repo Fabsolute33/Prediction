@@ -27,10 +27,15 @@ class DrawResponse(BaseModel):
         orm_mode = True
 
 class PredictionResponse(BaseModel):
-    numbers: List[int]
-    # letter: str # Removed as per user request
-    confidence: float
-    details: List[dict]
+    # Unified Format
+    statistical: Optional[dict] = None
+    algorithmic: Optional[dict] = None
+    
+    # Legacy Flat Format
+    numbers: Optional[List[int]] = None
+    confidence: Optional[float] = None
+    details: Optional[List[dict]] = None
+    
     next_draw_time: Optional[str] = None
 
 class StatusResponse(BaseModel):
@@ -102,8 +107,9 @@ app = FastAPI(title="Crescendo Prophet", version="1.0.0")
 # CORS (Allow Frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In prod, specify React app URL
-    allow_credentials=True,
+    # allow_origins=["*"], # Wildcard works if allow_credentials=False
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_credentials=True, # Keeping True for now, but ensuring origins are correct.
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -112,6 +118,11 @@ app.add_middleware(
 def on_startup():
     init_db() # Ensure DB exists
     start_scheduler() # Start the generic scraper loop
+    
+    # Initialize Matrix Engine
+    from matrix_engine import build_matrices
+    print("Initializing Matrix Engine...")
+    build_matrices()
 
 @app.get("/status", response_model=StatusResponse)
 def get_status():
@@ -119,6 +130,18 @@ def get_status():
         "status": "online",
         "timestamp": datetime.datetime.now()
     }
+
+@app.get("/matrix")
+def get_matrix_data():
+    """
+    Returns the visualization data for Matrix A (Time) and Matrix B (Space).
+    Includes the Algorithmic Probability prediction.
+    """
+    from matrix_engine import get_matrix_visual_data
+    try:
+        return get_matrix_visual_data()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/predict", response_model=PredictionResponse)
 def get_prediction(db: Session = Depends(get_db)):
@@ -181,7 +204,26 @@ def get_prediction(db: Session = Depends(get_db)):
             return pred
 
         # 3. If not found, GENERATE and SAVE
-        prediction = calculate_prediction() # uses current history
+        # --- UNIFIED PREDICTION LOGIC ---
+        from engine import calculate_prediction as calc_stat
+        from matrix_engine import calculate_matrix_prediction as calc_algo
+        
+        stat_pred = calc_stat()
+        algo_pred = calc_algo()
+        
+        # Structure the new unified prediction object
+        # Note: Frontend history expects 'prediction' to possibly be the old flat format OR new format.
+        # We will migrate to:
+        # {
+        #    "statistical": { ... },
+        #    "algorithmic": { ... },
+        #    "next_draw_time": "..."
+        # }
+        
+        prediction = {
+            "statistical": stat_pred,
+            "algorithmic": algo_pred
+        }
         
         # Format "next_draw_time" string for valid return
         next_draw_str = f"{next_draw_hour}h00"

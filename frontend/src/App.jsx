@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import PredictionBoard from './components/PredictionBoard';
 import HistoryTable from './components/HistoryTable';
-import { Activity, BarChart3, Brain, History, Stars, Menu, X } from 'lucide-react';
+import MatrixPanel from './components/MatrixPanel';
+import { Activity, BarChart3, Brain, History, Stars, Menu, X, Grid } from 'lucide-react';
 import ExpertAgentPanel from './components/ExpertAgentPanel';
 import StatisticsPanel from './components/StatisticsPanel';
 
@@ -112,6 +113,7 @@ function App() {
           {/* Desktop Navigation Tabs */}
           <div className="hidden md:flex justify-start gap-2 bg-gray-900/50 p-1 rounded-full backdrop-blur-sm border border-gray-800 w-fit">
             <NavButton id="dashboard" icon={Stars} label="Prédiction" />
+            <NavButton id="matrix" icon={Grid} label="Matrix" />
             <NavButton id="stats" icon={BarChart3} label="Statistiques" />
             <NavButton id="expert" icon={Brain} label="Expert IA" />
           </div>
@@ -131,6 +133,12 @@ function App() {
                 </h2>
                 <HistoryTable draws={history} nextDrawPrediction={prediction} />
               </section>
+            </div>
+          )}
+
+          {activeTab === 'matrix' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <MatrixPanel />
             </div>
           )}
 
@@ -168,6 +176,7 @@ function App() {
 
           <div className="flex flex-col gap-4">
             <MobileMenuItem id="dashboard" icon={Stars} label="Prédiction" />
+            <MobileMenuItem id="matrix" icon={Grid} label="Matrix" />
             <MobileMenuItem id="stats" icon={BarChart3} label="Statistiques" />
             <MobileMenuItem id="expert" icon={Brain} label="Expert IA" />
           </div>
