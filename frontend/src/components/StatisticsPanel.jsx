@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Trophy, TrendingDown, Hourglass, Hash, PieChart, Info } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend } from 'recharts';
+import { Trophy, TrendingDown, Hourglass, Hash, PieChart, Info, BarChart3 } from 'lucide-react';
 
 const StatisticsPanel = ({ stats }) => {
 
@@ -110,12 +110,98 @@ const StatisticsPanel = ({ stats }) => {
                 </StatCard>
             </div>
 
+            {/* Global Frequency Chart */}
+            <StatCard
+                title="Fréquence Globale (Historique)"
+                icon={BarChart3}
+                className="border-t-4 border-t-blue-500"
+                tooltip="La fréquence de sortie de chaque numéro sur l'ensemble de l'historique."
+            >
+                <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={stats.frequency_all}>
+                            <XAxis
+                                dataKey="number"
+                                stroke="#9ca3af"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <Tooltip
+                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
+                            />
+                            <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                                {stats.frequency_all && stats.frequency_all.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={`hsl(${210 + (index * 2)}, 80%, 60%)`} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </StatCard>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Parity Chart */}
+                <StatCard
+                    title="Parité (Pairs / Impairs)"
+                    icon={PieChart}
+                    className="border-t-4 border-t-purple-500"
+                    tooltip="Répartition entre les numéros pairs et impairs."
+                >
+                    <div className="h-64 flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RePieChart>
+                                <Pie
+                                    data={stats.parity_stats}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {stats.parity_stats && stats.parity_stats.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#8b5cf6' : '#ec4899'} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }} />
+                                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: '#9ca3af' }} />
+                            </RePieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </StatCard>
+
+                {/* Decades Chart */}
+                <StatCard
+                    title="Répartition par Dizaine"
+                    icon={Hash}
+                    className="border-t-4 border-t-emerald-500"
+                    tooltip="Répartition des numéros par tranche (1-9, 10-19, 20-25)."
+                >
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.decade_stats} layout="vertical">
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} width={50} tickLine={false} axisLine={false} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }} />
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+                                    <Cell fill="#10b981" />
+                                    <Cell fill="#06b6d4" />
+                                    <Cell fill="#3b82f6" />
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </StatCard>
+            </div>
+
             {/* Letter Stats Removed as per user request */}
 
             <div className="text-right text-xs text-gray-600">
                 Basé sur une analyse de {stats.total_draws} tirages historiques.
             </div>
-        </div>
+        </div >
     );
 };
 

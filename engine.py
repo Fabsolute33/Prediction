@@ -192,11 +192,61 @@ def get_comprehensive_stats(df_override: pd.DataFrame = None):
         # letter_stats = calculate_letter_stats(df)
         # sorted_letters = sorted(letter_stats.items(), key=lambda x: x[1]["count"], reverse=True) # Sort by freq
 
+        # 4. Global Frequencies (All time or last X)
+        # Let's use ALL history for "Global" feel, or maybe limit to last 100 if DB is huge?
+        # User asked for interesting stats, full history is usually better for "Global Frequency".
+        global_counts = {n: 0 for n in all_numbers}
+        for _, row in df.iterrows():
+            for ball in row['balls']:
+                if ball in global_counts:
+                    global_counts[ball] += 1
+        
+        # Format for charts: sorted by number 1-25
+        frequency_all = [{"number": n, "count": global_counts[n]} for n in sorted(global_counts.keys())]
+
+        # 5. Parity (Even/Odd)
+        even_count = 0
+        odd_count = 0
+        for _, row in df.iterrows():
+            for ball in row['balls']:
+                if ball % 2 == 0:
+                    even_count += 1
+                else:
+                    odd_count += 1
+        
+        parity_stats = [
+            {"name": "Pairs", "value": even_count},
+            {"name": "Impairs", "value": odd_count}
+        ]
+
+        # 6. Decades (1-9, 10-19, 20-25)
+        decades = {
+            "1-9": 0,
+            "10-19": 0,
+            "20-25": 0
+        }
+        for _, row in df.iterrows():
+            for ball in row['balls']:
+                if 1 <= ball <= 9:
+                    decades["1-9"] += 1
+                elif 10 <= ball <= 19:
+                    decades["10-19"] += 1
+                elif 20 <= ball <= 25:
+                    decades["20-25"] += 1
+        
+        decade_stats = [
+            {"name": "1-9", "value": decades["1-9"]},
+            {"name": "10-19", "value": decades["10-19"]},
+            {"name": "20-25", "value": decades["20-25"]}
+        ]
+
         return {
             "hot_numbers": [{"number": n, "count": c} for n, c in hot_numbers],
             "cold_numbers": [{"number": n, "count": c} for n, c in cold_numbers],
             "overdue_numbers": [{"number": n, "gap": data["gap"]} for n, data in overdue_numbers],
-            # "letter_stats": [{"letter": l, "count": data["count"], "gap": data["gap"]} for l, data in sorted_letters],
+            "frequency_all": frequency_all,
+            "parity_stats": parity_stats,
+            "decade_stats": decade_stats,
             "total_draws": len(df)
         }
     finally:
