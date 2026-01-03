@@ -60,11 +60,14 @@ const HistoryTable = ({ draws }) => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex gap-1 flex-wrap">
-                                                {predNumbers.length > 0 ? predNumbers.map((ball, i) => (
-                                                    <span key={i} className="inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-medium border bg-purple-500/10 border-purple-500/30 text-purple-300">
-                                                        {ball}
-                                                    </span>
-                                                )) : <span className="text-gray-600">-</span>}
+                                                {predNumbers.length > 0 ? predNumbers.map((ball, i) => {
+                                                    const isMatch = draw.balls_list.includes(ball);
+                                                    return (
+                                                        <span key={i} className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-medium border ${isMatch ? 'bg-emerald-500 text-black border-emerald-500 font-bold shadow-lg shadow-emerald-500/20' : 'bg-purple-500/10 border-purple-500/30 text-purple-300'}`}>
+                                                            {ball}
+                                                        </span>
+                                                    );
+                                                }) : <span className="text-gray-600">-</span>}
                                             </div>
                                         </td>
                                         <td className="p-4 text-center font-bold text-yellow-500">
@@ -139,11 +142,14 @@ const HistoryTable = ({ draws }) => {
                                 <div className="flex flex-col gap-1">
                                     <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Prediction IA</span>
                                     <div className="flex flex-wrap gap-1.5 justify-start bg-purple-900/10 p-2 rounded-lg border border-purple-500/10">
-                                        {predNumbers.map((ball, i) => (
-                                            <span key={i} className="inline-flex w-6 h-6 items-center justify-center rounded-full text-[10px] font-medium border bg-purple-500/10 border-purple-500/30 text-purple-300">
-                                                {ball}
-                                            </span>
-                                        ))}
+                                        {predNumbers.map((ball, i) => {
+                                            const isMatch = draw.balls_list.includes(ball);
+                                            return (
+                                                <span key={i} className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-[10px] font-medium border ${isMatch ? 'bg-emerald-500 text-black border-emerald-500 font-bold shadow-lg shadow-emerald-500/20' : 'bg-purple-500/10 border-purple-500/30 text-purple-300'}`}>
+                                                    {ball}
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
