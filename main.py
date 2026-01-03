@@ -121,16 +121,95 @@ def get_status():
     }
 
 @app.get("/predict", response_model=PredictionResponse)
-def get_prediction():
+def get_prediction(db: Session = Depends(get_db)):
     """
-    Returns the latest prediction based on current DB state.
+    Returns the latest prediction. 
+    Now persists the prediction for the NEXT draw to ensure stability.
     """
     try:
-        # Prediction logic is stateless/dynamic based on DB
-        prediction = calculate_prediction()
-        prediction['next_draw_time'] = calculate_next_draw_time_str()
+        # 1. Determine exactly when the next draw is
+        paris_tz = pytz.timezone('Europe/Paris')
+        now = datetime.datetime.now(paris_tz)
+        
+        # logic matches calculate_next_draw_time_str roughly but implies specific date/time
+        # formatting: draws are 13h, 14h ... 19h
+        
+        current_hour = now.hour
+        # if 13:00 to 18:59 -> next is current_hour + 1
+        # if >= 19:00 -> next is tomorrow 13:00
+        # if < 13:00 -> next is today 13:00
+        
+        next_draw_date = now.date()
+        next_draw_hour = 13
+        
+        if current_hour < 13:
+            next_draw_hour = 13
+        elif current_hour >= 19:
+            next_draw_date = now.date() + datetime.timedelta(days=1)
+            next_draw_hour = 13
+        else:
+            next_draw_hour = current_hour + 1
+            
+        next_draw_time = datetime.time(next_draw_hour, 0)
+        
+        # 2. Check DB for this specific future draw
+        existing_draw = db.query(Draw).filter(
+            Draw.date == next_draw_date,
+            Draw.time == next_draw_time
+        ).first()
+        
+        if existing_draw and existing_draw.prediction_json:
+            # We already have a stable prediction for this slot
+            pred = existing_draw.prediction_json
+            
+            # Ensure next_draw_time string matches what frontend expects
+            # (Just for display consistency)
+            
+            # We can return it directly.
+            # We might need to ensure 'next_draw_time' key is set if frontend needs it from the root of response
+            # deeper inside the 'prediction' object usually?
+            # The PredictionResponse model has 'next_draw_time' at top level.
+            
+            # The stored prediction might or might not have it. Let's ensure it.
+            # actually we return PredictionResponse which constructs from dict.
+            
+            next_draw_str = f"{next_draw_hour}h00"
+            if next_draw_date > now.date():
+                next_draw_str = f"demain {next_draw_str}"
+                
+            pred['next_draw_time'] = next_draw_str
+            return pred
+
+        # 3. If not found, GENERATE and SAVE
+        prediction = calculate_prediction() # uses current history
+        
+        # Format "next_draw_time" string for valid return
+        next_draw_str = f"{next_draw_hour}h00"
+        if next_draw_date > now.date():
+            next_draw_str = f"demain {next_draw_str}"
+        prediction['next_draw_time'] = next_draw_str
+        
+        # Create 'Pending' Draw
+        # ID format: YYYYMMDDHH
+        id_str = f"{next_draw_date.strftime('%Y%m%d')}{next_draw_hour:02d}"
+        
+        new_draw = Draw(
+            draw_id=int(id_str),
+            date=next_draw_date,
+            time=next_draw_time,
+            balls_list=[], # Empty implies pending
+            bonus_letter="?",
+            prediction_json=prediction,
+            source='ai_pending'
+        )
+        
+        db.add(new_draw)
+        db.commit()
+        
         return prediction
+
     except Exception as e:
+        # Fallback if DB fails? Or just raise
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stats")
@@ -150,7 +229,7 @@ def get_history(limit: int = 50, db: Session = Depends(get_db)):
     """
     Returns the latest historical draws with gains.
     """
-    draws = db.query(Draw).order_by(Draw.date.desc(), Draw.time.desc()).limit(limit).all()
+    draws = db.query(Draw).filter(Draw.source != 'ai_pending').order_by(Draw.date.desc(), Draw.time.desc()).limit(limit).all()
     
     response_data = []
     for d in draws:

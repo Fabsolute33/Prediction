@@ -189,6 +189,17 @@ def fetch_and_store_latest() -> bool:
                          latest_added = True
                          print(f"New draw added: {scraped_date} {draw_time} with prediction")
                     
+                    elif exists.source == 'ai_pending':
+                         # It was a pending prediction! Now we have the result.
+                         # We UPDATE it.
+                         exists.balls_list = balls
+                         exists.bonus_letter = bonus
+                         exists.source = 'scrape'
+                         # We KEEP the original prediction_json to see if AI was right!
+                         
+                         latest_added = True
+                         print(f"Updated pending draw: {scraped_date} {draw_time}")
+                    
                 except Exception as e:
                     print(f"Error processing draw {time_str}: {e}")
                     continue
