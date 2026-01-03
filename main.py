@@ -8,6 +8,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 import uvicorn
 import datetime
+import pytz
 
 # --- Pydantic Schemas ---
 class DrawResponse(BaseModel):
@@ -81,7 +82,8 @@ def calculate_next_draw_time_str() -> str:
     Calculates the next draw time string based on current time.
     Draws are hourly from 13h to 19h (approx).
     """
-    now = datetime.datetime.now()
+    paris_tz = pytz.timezone('Europe/Paris')
+    now = datetime.datetime.now(paris_tz)
     current_hour = now.hour
     
     if current_hour < 13:
@@ -192,7 +194,8 @@ def refresh_data(db: Session = Depends(get_db)):
         
         # Calculate message
         # Drawings are hourly from 13h to 19h (approx)
-        now = datetime.datetime.now()
+        paris_tz = pytz.timezone('Europe/Paris')
+        now = datetime.datetime.now(paris_tz)
         
         # Logic to determine "next draw" time for the message
         # If updated=True, we have a new prediction for the NEXT draw.
