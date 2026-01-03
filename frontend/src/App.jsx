@@ -15,6 +15,7 @@ function App() {
   const [prediction, setPrediction] = useState(null);
   const [history, setHistory] = useState([]);
   const [status, setStatus] = useState("Connecting...");
+  const [stats, setStats] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -24,6 +25,7 @@ function App() {
       const [predRes, histRes, statRes] = await Promise.all([
         fetch(`${API_URL}/predict`),
         fetch(`${API_URL}/history?limit=20`),
+        fetch(`${API_URL}/stats`),
         fetch(`${API_URL}/status`)
       ]);
 
@@ -34,8 +36,12 @@ function App() {
         setHistory(await histRes.json());
       }
       if (statRes.ok) {
+        setStats(await statRes.json());
+      }
+      if (predRes.ok && histRes.ok && statRes.ok) {
         setStatus("Live Connected");
       }
+
     } catch (error) {
       console.error("Fetch Error:", error);
       setStatus("Offline / Retrying...");
@@ -130,7 +136,7 @@ function App() {
 
           {activeTab === 'stats' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <StatisticsPanel />
+              <StatisticsPanel stats={stats} />
             </div>
           )}
 

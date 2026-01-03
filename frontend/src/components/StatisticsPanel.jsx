@@ -2,34 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Trophy, TrendingDown, Hourglass, Hash, PieChart, Info } from 'lucide-react';
 
-const StatisticsPanel = () => {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
+const StatisticsPanel = ({ stats }) => {
 
-    const getApiUrl = () => {
-        const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        return url.startsWith('http') ? url : `https://${url}`;
-    };
-
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await fetch(`${getApiUrl()}/stats`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setStats(data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch statistics:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchStats();
-    }, []);
-
-    if (loading) return <div className="text-white text-center p-8">Loading Statistics...</div>;
+    if (!stats) return <div className="text-white text-center p-8">Chargement des statistiques...</div>;
     if (!stats) return <div className="text-white text-center p-8">Statistics Unavailable</div>;
 
     const StatCard = ({ title, icon: Icon, children, className = "", tooltip }) => (
