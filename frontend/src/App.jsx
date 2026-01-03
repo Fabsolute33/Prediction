@@ -129,7 +129,7 @@ function App() {
                   <History className="w-5 h-5 text-purple-400" />
                   Derniers Tirages
                 </h2>
-                <HistoryTable draws={history} />
+                <HistoryTable draws={history} nextDrawPrediction={prediction} />
               </section>
             </div>
           )}
