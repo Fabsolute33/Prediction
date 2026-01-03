@@ -30,6 +30,7 @@ class PredictionResponse(BaseModel):
     # letter: str # Removed as per user request
     confidence: float
     details: List[dict]
+    next_draw_time: Optional[str] = None
 
 class StatusResponse(BaseModel):
     status: str
@@ -75,6 +76,24 @@ def calculate_gain(draw_balls: List[int], draw_letter: str, pred_balls: List[int
         
     return gain
 
+def calculate_next_draw_time_str() -> str:
+    """
+    Calculates the next draw time string based on current time.
+    Draws are hourly from 13h to 19h (approx).
+    """
+    now = datetime.datetime.now()
+    current_hour = now.hour
+    
+    if current_hour < 13:
+        return "13h00"
+    elif current_hour >= 19:
+        return "demain 13h00"
+    else:
+        # If it's 13:05, next is 14:00.
+        # If it's exactly 13:00, is it for 13:00? 
+        # Usually logic is "upcoming", so next hour.
+        return f"{current_hour + 1}h00"
+
 # --- App ---
 app = FastAPI(title="Crescendo Prophet", version="1.0.0")
 
@@ -107,6 +126,7 @@ def get_prediction():
     try:
         # Prediction logic is stateless/dynamic based on DB
         prediction = calculate_prediction()
+        prediction['next_draw_time'] = calculate_next_draw_time_str()
         return prediction
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

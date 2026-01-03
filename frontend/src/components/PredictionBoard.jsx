@@ -35,7 +35,7 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
         </div>
     );
 
-    const { numbers, confidence } = prediction;
+    const { numbers, confidence, next_draw_time } = prediction;
 
     return (
         <div className="glass-card p-6 md:p-8 w-full max-w-4xl mx-auto mb-8 relative overflow-hidden group">
@@ -48,6 +48,11 @@ const PredictionBoard = ({ prediction, onRefresh }) => {
                     <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
                         The Oracle
                     </h2>
+                    {next_draw_time && (
+                        <div className="text-sm text-gray-400 ml-2 border-l border-gray-600 pl-2">
+                            Prochain tirage : <span className="text-white font-bold">{next_draw_time}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="w-full md:w-64 flex flex-col items-center md:items-end gap-3 md:gap-2">
                     <StatusGauge confidence={confidence} />

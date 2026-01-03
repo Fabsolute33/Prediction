@@ -165,6 +165,13 @@ def fetch_and_store_latest() -> bool:
                     # Store in DB
                     exists = db.query(Draw).filter_by(date=scraped_date, time=draw_time).first()
                     if not exists:
+                         # Calculate prediction for this draw (based on history UP TO this draw)
+                         # Note: `calculate_prediction` uses the current DB state.
+                         # Since we haven't inserted this draw yet, the DB contains draws 0..N-1.
+                         # This is exactly what we want: prediction for draw N based on 0..N-1.
+                         from engine import calculate_prediction
+                         prediction = calculate_prediction() # No arguments = uses full DB history
+
                          # Generate ID: YYYYMMDDHH
                          # e.g. 2025122713
                          id_str = f"{scraped_date.strftime('%Y%m%d')}{hour:02d}"
@@ -175,11 +182,12 @@ def fetch_and_store_latest() -> bool:
                              time=draw_time,
                              balls_list=balls,
                              bonus_letter=bonus,
+                             prediction_json=prediction,
                              source='scrape'
                          )
                          db.add(new_draw)
                          latest_added = True
-                         print(f"New draw added: {scraped_date} {draw_time}")
+                         print(f"New draw added: {scraped_date} {draw_time} with prediction")
                     
                 except Exception as e:
                     print(f"Error processing draw {time_str}: {e}")
