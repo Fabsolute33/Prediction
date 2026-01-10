@@ -108,7 +108,7 @@ app = FastAPI(title="Crescendo Prophet", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["*"], # Wildcard works if allow_credentials=False
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "https://crescendo-web-ydw2.onrender.com"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173", "http://localhost:3000", "https://crescendo-web-ydw2.onrender.com"],
     allow_credentials=True, # Keeping True for now, but ensuring origins are correct.
     allow_methods=["*"],
     allow_headers=["*"],
