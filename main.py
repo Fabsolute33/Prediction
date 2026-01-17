@@ -1,3 +1,4 @@
+# Version: 1.0.1 - Auto-deploy trigger
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 # from sqlalchemy.orm import Session -- REMOVED
