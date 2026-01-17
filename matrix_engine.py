@@ -1,6 +1,8 @@
 import numpy as np
-from sqlalchemy.orm import Session
-from models import Draw, SessionLocal
+# from sqlalchemy.orm import Session -- REMOVED
+# from models import Draw, SessionLocal -- REMOVED
+# Lazy imports - moved inside functions to avoid initialization issues
+# from firestore_service import get_all_draws_sorted as fs_get_all_draws_sorted, get_draw_count as fs_get_draw_count
 
 # Global cache for matrices to avoid rebuilding constantly if not needed
 # In a production app with multiple workers, this might need a better store (Redis),
@@ -10,24 +12,19 @@ _MATRIX_B = None
 _LAST_DRAW_COUNT = 0
 
 def get_db_draw_count():
-    db = SessionLocal()
-    try:
-        # Count non-pending draws
-        return db.query(Draw).filter(Draw.source != 'ai_pending').count()
-    finally:
-        db.close()
+    # Use firestore count (or len of all draws if count API too expensive/complex)
+    from firestore_service import get_draw_count as fs_get_draw_count  # Lazy import
+    return fs_get_draw_count()
 
 def get_all_draws_sorted():
     """
     Helper to fetch all draws sorted by date/time ascending (oldest to newest).
     Excludes pending draws.
     """
-    db = SessionLocal()
-    try:
-        draws = db.query(Draw).filter(Draw.source != 'ai_pending').order_by(Draw.date.asc(), Draw.time.asc()).all()
-        return draws
-    finally:
-        db.close()
+    from firestore_service import get_all_draws_sorted as fs_get_all_draws_sorted  # Lazy import
+    draws = fs_get_all_draws_sorted()
+    # Filter in python for source != 'ai_pending'
+    return [d for d in draws if d.source != 'ai_pending']
 
 def build_matrices(draws=None):
     """

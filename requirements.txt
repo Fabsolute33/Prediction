@@ -8,3 +8,5 @@ apscheduler
 python-multipart
 pytz
 numpy
+google-cloud-firestore
+firebase-admin

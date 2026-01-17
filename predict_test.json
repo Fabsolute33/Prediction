@@ -1,0 +1,20 @@
+﻿{
+    "statistical":  {
+                        "numbers":  [
+
+                                    ],
+                        "confidence":  0
+                    },
+    "algorithmic":  {
+                        "details":  [
+
+                                    ],
+                        "numbers":  [
+
+                                    ]
+                    },
+    "numbers":  null,
+    "confidence":  null,
+    "details":  null,
+    "next_draw_time":  "13h00"
+}

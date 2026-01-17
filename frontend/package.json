@@ -1,15 +1,18 @@
 {
-  "name": "frontend",
+  "name": "crescendo-prophet",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
   },
   "dependencies": {
+    "firebase": "^10.14.0",
     "@tailwindcss/postcss": "^4.1.18",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

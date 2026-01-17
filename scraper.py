@@ -72,21 +72,12 @@ def fetch_and_store_latest() -> bool:
         import re
         
         latest_added = False
-        db = SessionLocal()
         
         # Find all elements that might be the time
-        # We saw they are simple text elements often.
-        # Let's look for the main container first if possible?
-        # The browser agent found '.bg-primary' for balls. Let's find those first?
-        # Actually, let's look for the sets of balls.
-        
-        # Alternative: The "time" is a strong anchor.
-        # <h3 ...> 13h </h3> or <span> 13h </span>
-        # We will search for all text matching \d{1,2}h
-        
         all_tags = soup.find_all(string=re.compile(r"^\d{1,2}h$"))
-        
         seen_times = set()
+
+        from firestore_service import get_draw_by_date_time, add_draw, update_draw
 
         for time_tag in all_tags:
             time_str = time_tag.strip()
@@ -94,130 +85,103 @@ def fetch_and_store_latest() -> bool:
                 continue
             seen_times.add(time_str)
             
-            # Parent of the time text should be the anchor
             time_el = time_tag.parent
-            
-            # Find the balls container related to this time.
-            # Usually it's in the same "card" or block.
-            # We can walk up to a common container or look for next siblings.
-            # Let's try to assume they are in a common parent div.
-            
-            # Go up 2-3 levels to find a container
             container = time_el.find_parent("div")
             if not container:
                 continue
-                
-            # Search for balls in this container
-            # Balls have class 'bg-primary' (numbers) and 'bg-secondary' (bonus)
-            # Note: The agent found 'bg-primary rounded-full'.
             
-            # We might need to go higher if the container is tight
-            # Let's try a wider search from the time element
-            
-            # A safer heuristics: Look for the next list of balls in the HTML stream
-            # but that risks mixing draws.
-            
-            # Let's try to find the balls within the close vicinity
-            # The structure is likely:
-            # <div>
-            #    <div class="time">13h</div>
-            #    <div class="results">
-            #       <span class="bg-primary ...">1</span>
-            #       ...
-            #    </div>
-            # </div>
-            
-            # So, finding specific classes in the parent seems correct.
-            # Let's iterate up to 3 parents
             card = container
             balls = []
             bonus = None
             
             for _ in range(4):
                 if not card: break
-                
                 found_balls = card.select(".bg-primary")
                 if found_balls:
-                    # Validate they look like numbers
                     current_balls = [b.get_text(strip=True) for b in found_balls if b.get_text(strip=True).isdigit()]
-                    if len(current_balls) >= 5: # Expect 10 usually for Crescendo? Or 5? 
-                        # Crescendo is 2 grids? No, it's 10 numbers?
-                        # Agent said: "1, 3, 5, 12, 17, 19, 20, 22, 24, 25" -> 10 numbers.
+                    if len(current_balls) >= 5: 
                         balls = [int(x) for x in current_balls]
-                        
-                        # Find bonus
                         found_bonus = card.select(".bg-secondary")
                         if found_bonus:
                             bonus_text = found_bonus[0].get_text(strip=True)
                             if len(bonus_text) == 1 and bonus_text.isalpha():
                                 bonus = bonus_text
-                        
-                        break # Found them
-                
+                        break 
                 card = card.parent
             
             if balls and bonus:
-                # Parse time
                 try:
                     hour = int(time_str.replace("h", ""))
+                    # Create datetime objects (native Python objects work with Firestore)
                     draw_time = datetime.strptime(f"{hour}:00", "%H:%M").time()
                     
-                    # Store in DB
-                    exists = db.query(Draw).filter_by(date=scraped_date, time=draw_time).first()
+                    # Store variables for query. 
+                    # Note: Firestore saves time as String or Timestamp? 
+                    # We will save as native objects.
+                    # HOWEVER, when querying, we must match the type.
+                    # Since we are saving native, we query native.
+                    
+                    # We need datetime.datetime for date usually in Firestore or it becomes Timestamp.
+                    # Let's convert date to datetime (midnight) if needed. 
+                    # But Python 'date' object is supported by google-cloud-firestore (stored as string or timestamp map?).
+                    # Actually, better to store as ISO string for maximum compatibility if not sure.
+                    # But let's try native first as it is cleaner.
+                    
+                    # Check existence
+                    exists = get_draw_by_date_time(str(scraped_date), str(draw_time)) # Using string for safe query/storage?
+                    # Wait, if I save native 'date', querying with 'string' will fail.
+                    # To be super safe and easy: Store ISO strings for date/time.
+                    
+                    s_date = scraped_date.isoformat()
+                    s_time = draw_time.strftime("%H:%M:%S")
+                    
+                    exists = get_draw_by_date_time(s_date, s_time)
+                    
                     if not exists:
-                         # Calculate prediction for this draw (based on history UP TO this draw)
-                         # Note: `calculate_prediction` uses the current DB state.
-                         # Since we haven't inserted this draw yet, the DB contains draws 0..N-1.
-                         # This is exactly what we want: prediction for draw N based on 0..N-1.
                          from engine import calculate_prediction as calc_stat
                          from matrix_engine import calculate_matrix_prediction as calc_algo
                          
-                         # Unified prediction
                          prediction = {
                              "statistical": calc_stat(),
                              "algorithmic": calc_algo()
                          }
 
-                         # Generate ID: YYYYMMDDHH
-                         # e.g. 2025122713
                          id_str = f"{scraped_date.strftime('%Y%m%d')}{hour:02d}"
                          
-                         new_draw = Draw(
-                             draw_id=int(id_str), 
-                             date=scraped_date,
-                             time=draw_time,
-                             balls_list=balls,
-                             bonus_letter=bonus,
-                             prediction_json=prediction,
-                             source='scrape'
-                         )
-                         db.add(new_draw)
+                         new_draw_data = {
+                             "draw_id": int(id_str), 
+                             "date": s_date, # Storing as String
+                             "time": s_time, # Storing as String
+                             "balls_list": balls,
+                             "bonus_letter": bonus,
+                             "prediction_json": prediction,
+                             "source": 'scrape'
+                         }
+                         
+                         add_draw(new_draw_data)
                          latest_added = True
-                         print(f"New draw added: {scraped_date} {draw_time} with prediction")
+                         print(f"New draw added: {s_date} {s_time} with prediction")
                     
                     elif exists.source == 'ai_pending':
-                         # It was a pending prediction! Now we have the result.
-                         # We UPDATE it.
-                         exists.balls_list = balls
-                         exists.bonus_letter = bonus
-                         exists.source = 'scrape'
-                         # We KEEP the original prediction_json to see if AI was right!
+                         # Update pending
+                         update_data = {
+                             "balls_list": balls,
+                             "bonus_letter": bonus,
+                             "source": 'scrape'
+                         }
+                         update_draw(exists.id, update_data) # exists.id is the document ID
                          
                          latest_added = True
-                         print(f"Updated pending draw: {scraped_date} {draw_time}")
+                         print(f"Updated pending draw: {s_date} {s_time}")
                     
                 except Exception as e:
                     print(f"Error processing draw {time_str}: {e}")
                     continue
 
         if latest_added:
-            db.commit()
-            # --- Trigger Matrix Engine Update ---
             from matrix_engine import build_matrices
             print("Triggering Matrix Engine Recalculation...")
             build_matrices()
-            
-        db.close()
         
         return latest_added
 

@@ -1,23 +1,18 @@
 import pandas as pd
 import math
 from typing import Dict, Any, List
-from sqlalchemy.orm import Session
-from models import SessionLocal, AlgorithmConfiguration, Draw, engine as db_engine
+# from sqlalchemy.orm import Session -- REMOVED
+# from models import SessionLocal, AlgorithmConfiguration... -- REMOVED
+from firestore_service import get_active_config, set_active_config
 from engine import get_all_draws_as_dataframe, calculate_prediction
 
 class ExpertMathAgent:
     def __init__(self):
-        self.db_session = SessionLocal()
+        # No DB session needed
+        pass
 
     def get_current_config(self) -> Dict[str, float]:
-        config = self.db_session.query(AlgorithmConfiguration).filter_by(active=1).first()
-        if config:
-            return {
-                "freq_weight": float(config.freq_weight),
-                "gap_weight": float(config.gap_weight),
-                "decay_rate": float(config.decay_rate)
-            }
-        return {"freq_weight": 0.4, "gap_weight": 0.5, "decay_rate": 0.15}
+        return get_active_config()
 
     def backtest(self, params: Dict[str, float], history: pd.DataFrame, window_size: int = 20) -> float:
         """
@@ -64,7 +59,8 @@ class ExpertMathAgent:
         """
         Analyze how the current active formula is performing.
         """
-        df = get_all_draws_as_dataframe(self.db_session)
+        # Pass None as db, engine handles firestore fetch internally
+        df = get_all_draws_as_dataframe(db=None) 
         if df.empty:
             return {"status": "No data"}
             
@@ -81,18 +77,13 @@ class ExpertMathAgent:
         """
         Search for parameters that improve the score.
         """
-        df = get_all_draws_as_dataframe(self.db_session)
+        df = get_all_draws_as_dataframe(db=None)
         if len(df) < 50:
             return {"status": "Not enough data to evolve"}
 
         current_accuracy = self.analyze_current_performance()["accuracy_last_50"]
         best_accuracy = current_accuracy
         best_params = self.get_current_config()
-        
-        # Grid Search ranges
-        # Freq: 0.1 -> 0.9, step 0.2
-        # Gap: 0.1 -> 0.9, step 0.2
-        # Decay: 0.05 -> 0.3, step 0.05
         
         # Simplified Search Space for speed
         freq_grid = [0.2, 0.4, 0.6, 0.8]
@@ -108,12 +99,14 @@ class ExpertMathAgent:
                     score = self.backtest(params, df, window_size=50)
                     
                     if score > best_accuracy:
-                        best_accuracy = score
-                        best_params = params
-                        proposals.append({
-                            "params": params,
-                            "accuracy": score
-                        })
+                        # Avoid floating point jitter
+                        if score > best_accuracy + 0.001: 
+                            best_accuracy = score
+                            best_params = params
+                            proposals.append({
+                                "params": params,
+                                "accuracy": score
+                            })
         
         if best_accuracy > current_accuracy:
              improvement = (best_accuracy - current_accuracy) / current_accuracy if current_accuracy > 0 else 0
@@ -132,20 +125,7 @@ class ExpertMathAgent:
              }
 
     def apply_new_parameters(self, params: Dict[str, float], notes="Applied by Expert Agent"):
-        # Deactivate old
-        self.db_session.query(AlgorithmConfiguration).update({AlgorithmConfiguration.active: 0})
-        
-        # Insert new
-        new_config = AlgorithmConfiguration(
-            active=1,
-            freq_weight=str(params["freq_weight"]),
-            gap_weight=str(params["gap_weight"]),
-            decay_rate=str(params["decay_rate"]),
-            notes=notes,
-            updated_at=pd.Timestamp.now().date()
-        )
-        self.db_session.add(new_config)
-        self.db_session.commit()
+        set_active_config(params, notes)
         return {"status": "updated", "config": params}
 
 if __name__ == "__main__":

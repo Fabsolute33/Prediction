@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from models import SessionLocal, Draw, init_db
+# from sqlalchemy.orm import Session -- REMOVED
+# from models import SessionLocal, Draw, init_db -- REMOVED
+from models import Draw
+from firestore_service import get_draw_by_date_time, add_draw, update_draw, get_all_draws_sorted, get_latest_draw
 from scheduler import start_scheduler
 from engine import calculate_prediction
 from typing import List, Optional
@@ -12,10 +14,10 @@ import pytz
 
 # --- Pydantic Schemas ---
 class DrawResponse(BaseModel):
-    id: int
+    id: Optional[str] = None # Firestore ID is string
     draw_id: int
     date: datetime.date
-    time: datetime.time
+    time: datetime.time # Using datetime.time
     balls_list: List[int]
     bonus_letter: str
     source: str
@@ -43,12 +45,8 @@ class StatusResponse(BaseModel):
     timestamp: datetime.datetime
 
 # --- Dependencies ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# get_db removed because Firestore client is singleton in firestore_service
+
 
 # --- Helpers ---
 def calculate_gain(draw_balls: List[int], draw_letter: str, pred_balls: List[int], pred_letter: str) -> float:
@@ -108,7 +106,7 @@ app = FastAPI(title="Crescendo Prophet", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["*"], # Wildcard works if allow_credentials=False
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173", "http://localhost:3000", "https://crescendo-web-ydw2.onrender.com"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173", "http://localhost:3000", "https://crescendo-web-ydw2.onrender.com", "https://prophet-crescendo.web.app", "https://prophet-crescendo.firebaseapp.com"],
     allow_credentials=True, # Keeping True for now, but ensuring origins are correct.
     allow_methods=["*"],
     allow_headers=["*"],
@@ -116,7 +114,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    init_db() # Ensure DB exists
+    # init_db() # No need for Firestore
     start_scheduler() # Start the generic scraper loop
     
     # Initialize Matrix Engine
@@ -144,7 +142,7 @@ def get_matrix_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/predict", response_model=PredictionResponse)
-def get_prediction(db: Session = Depends(get_db)):
+def get_prediction():
     """
     Returns the latest prediction. 
     Now persists the prediction for the NEXT draw to ensure stability.
@@ -153,9 +151,6 @@ def get_prediction(db: Session = Depends(get_db)):
         # 1. Determine exactly when the next draw is
         paris_tz = pytz.timezone('Europe/Paris')
         now = datetime.datetime.now(paris_tz)
-        
-        # logic matches calculate_next_draw_time_str roughly but implies specific date/time
-        # formatting: draws are 13h, 14h ... 19h
         
         current_hour = now.hour
         # if 13:00 to 18:59 -> next is current_hour + 1
@@ -175,11 +170,12 @@ def get_prediction(db: Session = Depends(get_db)):
             
         next_draw_time = datetime.time(next_draw_hour, 0)
         
+        # Stringify for Firestore query (matching scraper logic)
+        s_date = next_draw_date.isoformat()
+        s_time = next_draw_time.strftime("%H:%M:%S")
+
         # 2. Check DB for this specific future draw
-        existing_draw = db.query(Draw).filter(
-            Draw.date == next_draw_date,
-            Draw.time == next_draw_time
-        ).first()
+        existing_draw = get_draw_by_date_time(s_date, s_time)
         
         if existing_draw and existing_draw.prediction_json:
             # We already have a stable prediction for this slot
@@ -187,7 +183,6 @@ def get_prediction(db: Session = Depends(get_db)):
 
             # CHECK FOR MISSING ALGORITHMIC DATA (Legacy Fix)
             if "algorithmic" in pred:
-                # Ensure next_draw_time string matches what frontend expects
                 next_draw_str = f"{next_draw_hour}h00"
                 if next_draw_date > now.date():
                     next_draw_str = f"demain {next_draw_str}"
@@ -198,7 +193,6 @@ def get_prediction(db: Session = Depends(get_db)):
             print("Detected stale prediction (missing algorithmic). Regenerating...")
 
         # 3. If not found or stale, GENERATE and SAVE
-        # --- UNIFIED PREDICTION LOGIC ---
         from engine import calculate_prediction as calc_stat
         from matrix_engine import calculate_matrix_prediction as calc_algo
         
@@ -219,30 +213,28 @@ def get_prediction(db: Session = Depends(get_db)):
         
         if existing_draw:
             # Update existing stale draw
-            existing_draw.prediction_json = prediction
-            # existing_draw.balls_list = [] # Should be empty already
+            # existing_draw.id is the firestore doc ID
+            update_data = {"prediction_json": prediction}
+            update_draw(existing_draw.id, update_data)
         else:
             # Create 'Pending' Draw
             # ID format: YYYYMMDDHH
             id_str = f"{next_draw_date.strftime('%Y%m%d')}{next_draw_hour:02d}"
             
-            new_draw = Draw(
-                draw_id=int(id_str),
-                date=next_draw_date,
-                time=next_draw_time,
-                balls_list=[], # Empty implies pending
-                bonus_letter="?",
-                prediction_json=prediction,
-                source='ai_pending'
-            )
-            db.add(new_draw)
-        
-        db.commit()
+            new_draw_data = {
+                "draw_id": int(id_str),
+                "date": s_date, # Storing as String
+                "time": s_time, # Storing as String
+                "balls_list": [],
+                "bonus_letter": "?",
+                "prediction_json": prediction,
+                "source": 'ai_pending'
+            }
+            add_draw(new_draw_data)
         
         return prediction
 
     except Exception as e:
-        # Fallback if DB fails? Or just raise
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stats")
@@ -258,30 +250,30 @@ def get_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/history", response_model=List[DrawResponse])
-def get_history(limit: int = 50, db: Session = Depends(get_db)):
+def get_history(limit: int = 50):
     """
     Returns the latest historical draws with gains.
     """
-    draws = db.query(Draw).filter(Draw.source != 'ai_pending').order_by(Draw.date.desc(), Draw.time.desc()).limit(limit).all()
+    # firestore_service returns ALL sorted ASC (oldest first).
+    all_draws = get_all_draws_sorted()
+    # Filter pending in python
+    valid_draws = [d for d in all_draws if d.source != 'ai_pending']
+    # Reverse to get newest first and slice
+    latest = valid_draws[::-1][:limit]
     
     response_data = []
-    for d in draws:
+    for d in latest:
+        # d is Pydantic Model Draw
         pred = d.prediction_json or {}
         pred_numbers = pred.get("numbers", [])
         pred_letter = pred.get("letter", "")
         
-        matches_count = len(set(d.balls_list) & set(pred_numbers)) if pred_numbers else 0
+        d_dict = d.dict() # Pydantic v1, match earlier usage or just .dict()
+        
+        # Calculate calculated fields
         gain = calculate_gain(d.balls_list, d.bonus_letter, pred_numbers, pred_letter)
+        matches_count = len(set(d.balls_list) & set(pred_numbers)) if pred_numbers else 0
         
-        # We start constructing the response dict manually or assume Pydantic handles the property mapping 
-        # but since 'gain' and 'prediction' are not columns on the model (prediction_json is), 
-        # we might need to map them explicitly if we rely on orm_mode for the base fields.
-        # However, since we added 'prediction' (mapped to prediction_json maybe?) and 'gain' to Schema,
-        # we can just return a list of dicts or objects that satisfy the schema.
-        
-        # Simplest way: Convert to dict and update
-        d_dict = d.__dict__.copy()
-        d_dict['prediction'] = pred
         d_dict['gain'] = gain
         d_dict['matches_count'] = matches_count
         response_data.append(d_dict)
@@ -294,10 +286,9 @@ class RefreshResponse(BaseModel):
     updated: bool
 
 @app.post("/refresh", response_model=RefreshResponse)
-def refresh_data(db: Session = Depends(get_db)):
+def refresh_data():
     """
     Manually triggers a scraper run.
-    Returns the update status and a message for the user.
     """
     from scraper import fetch_and_store_latest
     
