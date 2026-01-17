@@ -115,6 +115,9 @@ def calculate_prediction(df_override: pd.DataFrame = None, config_override: Dict
     else:
         df = get_all_draws_as_dataframe()
     
+    print(f"[ENGINE DEBUG] df.empty = {df.empty}, df.shape = {df.shape if not df.empty else 'N/A'}")
+    if not df.empty:
+        print(f"[ENGINE DEBUG] df.columns = {list(df.columns)}")
     if df.empty:
         return {"numbers": [], "confidence": 0}
 

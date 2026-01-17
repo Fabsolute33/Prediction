@@ -1,0 +1,161 @@
+﻿{
+    "statistical":  {
+                        "numbers":  [
+                                        7,
+                                        5,
+                                        3,
+                                        19,
+                                        18,
+                                        25,
+                                        4,
+                                        6,
+                                        15,
+                                        12
+                                    ],
+                        "confidence":  39.40292107328234,
+                        "details":  [
+                                        {
+                                            "score":  5.381185924189113,
+                                            "number":  7,
+                                            "gap":  3,
+                                            "freq":  13
+                                        },
+                                        {
+                                            "score":  5.269646011787471,
+                                            "number":  5,
+                                            "gap":  1,
+                                            "freq":  13
+                                        },
+                                        {
+                                            "score":  4.069646011787471,
+                                            "number":  3,
+                                            "gap":  1,
+                                            "freq":  10
+                                        },
+                                        {
+                                            "score":  3.825594181952987,
+                                            "number":  19,
+                                            "gap":  4,
+                                            "freq":  9
+                                        },
+                                        {
+                                            "score":  3.7811859241891135,
+                                            "number":  18,
+                                            "gap":  3,
+                                            "freq":  9
+                                        },
+                                        {
+                                            "score":  3.729590889659141,
+                                            "number":  25,
+                                            "gap":  2,
+                                            "freq":  9
+                                        },
+                                        {
+                                            "score":  3.669646011787471,
+                                            "number":  4,
+                                            "gap":  1,
+                                            "freq":  9
+                                        },
+                                        {
+                                            "score":  3.3811859241891136,
+                                            "number":  6,
+                                            "gap":  3,
+                                            "freq":  8
+                                        },
+                                        {
+                                            "score":  3.2696460117874713,
+                                            "number":  15,
+                                            "gap":  1,
+                                            "freq":  8
+                                        },
+                                        {
+                                            "score":  3.0255941819529872,
+                                            "number":  12,
+                                            "gap":  4,
+                                            "freq":  7
+                                        }
+                                    ]
+                    },
+    "algorithmic":  {
+                        "matrix_b_summary":  "Active",
+                        "numbers":  [
+                                        5,
+                                        3,
+                                        4,
+                                        22,
+                                        7,
+                                        25,
+                                        20,
+                                        18,
+                                        2,
+                                        9
+                                    ],
+                        "details":  [
+                                        {
+                                            "score":  0.984691519479777,
+                                            "number":  5,
+                                            "score_time":  0.9781307421139671,
+                                            "score_space":  1.0
+                                        },
+                                        {
+                                            "score":  0.9758793969849245,
+                                            "number":  3,
+                                            "score_time":  1.0,
+                                            "score_space":  0.9195979899497487
+                                        },
+                                        {
+                                            "score":  0.9525290925145753,
+                                            "number":  4,
+                                            "score_time":  0.9644887969160122,
+                                            "score_space":  0.9246231155778895
+                                        },
+                                        {
+                                            "score":  0.9126745745251086,
+                                            "number":  22,
+                                            "score_time":  0.9161682722935867,
+                                            "score_space":  0.9045226130653267
+                                        },
+                                        {
+                                            "score":  0.9122164091575253,
+                                            "number":  7,
+                                            "score_time":  0.8853629965710519,
+                                            "score_space":  0.9748743718592966
+                                        },
+                                        {
+                                            "score":  0.9111718157803781,
+                                            "number":  25,
+                                            "score_time":  0.8946388466640004,
+                                            "score_space":  0.949748743718593
+                                        },
+                                        {
+                                            "score":  0.8828725071665966,
+                                            "number":  20,
+                                            "score_time":  0.8779011408912615,
+                                            "score_space":  0.8944723618090452
+                                        },
+                                        {
+                                            "score":  0.8784488445417729,
+                                            "number":  18,
+                                            "score_time":  0.8371236185485483,
+                                            "score_space":  0.9748743718592966
+                                        },
+                                        {
+                                            "score":  0.8675646439286273,
+                                            "number":  2,
+                                            "score_time":  0.8603400153754259,
+                                            "score_space":  0.8844221105527639
+                                        },
+                                        {
+                                            "score":  0.8473690302949067,
+                                            "number":  9,
+                                            "score_time":  0.8573326419862631,
+                                            "score_space":  0.8241206030150754
+                                        }
+                                    ],
+                        "matrix_a_summary":  "Active"
+                    },
+    "numbers":  null,
+    "confidence":  null,
+    "details":  null,
+    "next_draw_time":  "13h00"
+}

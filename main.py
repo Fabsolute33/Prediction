@@ -181,16 +181,20 @@ def get_prediction():
             # We already have a stable prediction for this slot
             pred = existing_draw.prediction_json
 
-            # CHECK FOR MISSING ALGORITHMIC DATA (Legacy Fix)
-            if "algorithmic" in pred:
+            # CHECK FOR VALID PREDICTION DATA (not empty)
+            stat_nums = pred.get("statistical", {}).get("numbers", [])
+            algo_nums = pred.get("algorithmic", {}).get("numbers", [])
+            has_valid_data = len(stat_nums) > 0 or len(algo_nums) > 0
+            
+            if "algorithmic" in pred and has_valid_data:
                 next_draw_str = f"{next_draw_hour}h00"
                 if next_draw_date > now.date():
                     next_draw_str = f"demain {next_draw_str}"
                     
                 pred['next_draw_time'] = next_draw_str
                 return pred
-            # If "algorithmic" is missing, we fall through to regenerate
-            print("Detected stale prediction (missing algorithmic). Regenerating...")
+            # If "algorithmic" is missing OR data is empty, we fall through to regenerate
+            print("Detected stale/empty prediction. Regenerating...")
 
         # 3. If not found or stale, GENERATE and SAVE
         from engine import calculate_prediction as calc_stat
@@ -266,6 +270,9 @@ def get_history(limit: int = 50):
         # d is Pydantic Model Draw
         pred = d.prediction_json or {}
         pred_numbers = pred.get("numbers", [])
+        # Also check new unified format
+        if not pred_numbers and pred.get("statistical"):
+            pred_numbers = pred.get("statistical", {}).get("numbers", [])
         pred_letter = pred.get("letter", "")
         
         d_dict = d.dict() # Pydantic v1, match earlier usage or just .dict()
@@ -276,6 +283,8 @@ def get_history(limit: int = 50):
         
         d_dict['gain'] = gain
         d_dict['matches_count'] = matches_count
+        # Add 'prediction' field for frontend compatibility (maps from prediction_json)
+        d_dict['prediction'] = d.prediction_json
         response_data.append(d_dict)
         
     return response_data
